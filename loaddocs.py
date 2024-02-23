@@ -13,12 +13,14 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
 
 
 
 
 llm = ChatOpenAI()
 
+# Takes question and retrieved documents and generates an answer
 prompt = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
 
 <context>
@@ -35,7 +37,7 @@ output_parser = StrOutputParser()
 chain = prompt | llm | output_parser
 
 # Load reference data to index
-loader = WebBaseLoader("https://docs.smith.langchain.com")
+loader = WebBaseLoader("https://en.wikipedia.org/wiki/Bitcoin")
 docs = loader.load()
 
 # Embedding model
@@ -45,4 +47,12 @@ embeddings = OpenAIEmbeddings()
 text_splitter = RecursiveCharacterTextSplitter()
 documents = text_splitter.split_documents(docs)
 vector = FAISS.from_documents(documents, embeddings)
+
+# Use retriever to dynamically select relevant documents
+retriever = vector.as_retriever()
+retrieval_chain = create_retrieval_chain(retriever, document_chain)
+question="What is Bitcoin mining?"
+response = retrieval_chain.invoke({"input": question})
+print(question)
+print(response["answer"])
 
