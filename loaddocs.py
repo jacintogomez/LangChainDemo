@@ -37,7 +37,7 @@ output_parser = StrOutputParser()
 chain = prompt | llm | output_parser
 
 # Load reference data to index
-loader = WebBaseLoader("https://en.wikipedia.org/wiki/Bitcoin")
+loader = WebBaseLoader("https://en.wikipedia.org/wiki/Shenzhen#:~:text=Since%20then%2C%20this%20area%20has,more%20than%20600%20years%20ago.")
 docs = loader.load()
 
 # Embedding model
@@ -51,7 +51,7 @@ vector = FAISS.from_documents(documents, embeddings)
 # Use retriever to dynamically select relevant documents
 retriever = vector.as_retriever()
 retrieval_chain = create_retrieval_chain(retriever, document_chain)
-question="What is Bitcoin mining?"
+question="What are some things a tourist can do in Shenzhen?"
 response = retrieval_chain.invoke({"input": question})
 print(question)
 print(response["answer"])
