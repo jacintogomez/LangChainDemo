@@ -18,7 +18,10 @@ from langchain.chains import create_history_aware_retriever
 from langchain_core.prompts import MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
 
-
+import textwrap
+def consoleformat(input,width=100):
+    formatted=textwrap.fill(input,width)
+    return formatted
 
 llm = ChatOpenAI()
 
@@ -76,8 +79,17 @@ document_chain = create_stuff_documents_chain(llm, prompt)
 
 retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
 
-chat_history = [HumanMessage(content="Is Satoshi Nakamoto the inventor of Bitcoin?"), AIMessage(content="Yes!")]
-print(retrieval_chain.invoke({
-    "chat_history": chat_history,
-    "input": "Tell me when he did it"
-}))
+# chat_history = [HumanMessage(content="Is Satoshi Nakamoto the inventor of Bitcoin?"), AIMessage(content="Yes!")]
+# answer=retrieval_chain.invoke({
+#     "chat_history": chat_history,
+#     "input": "Tell me who he is"
+# })
+
+while True:
+    user_msg=input("Q: ")
+    chat_history=[]
+    answer=retrieval_chain.invoke({
+        "chat_history":chat_history,
+        "input":user_msg
+    })
+    print(consoleformat(answer['answer']))

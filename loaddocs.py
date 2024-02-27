@@ -15,8 +15,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 
-
-
+import textwrap
+def consoleformat(input,width=100):
+    formatted=textwrap.fill(input,width)
+    return formatted
 
 llm = ChatOpenAI()
 
@@ -54,5 +56,5 @@ retrieval_chain = create_retrieval_chain(retriever, document_chain)
 question="What are some things a tourist can do in Shenzhen?"
 response = retrieval_chain.invoke({"input": question})
 print(question)
-print(response["answer"])
+print(consoleformat(response["answer"]))
 
