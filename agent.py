@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
+tavily_api_key=os.getenv("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")
 
 # import LangChain packages
 from langchain_openai import ChatOpenAI
@@ -17,11 +18,17 @@ from langchain.chains import create_retrieval_chain
 from langchain.chains import create_history_aware_retriever
 from langchain_core.prompts import MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain.tools.retriever import create_retriever_tool
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_openai import ChatOpenAI
+from langchain import hub
+from langchain.agents import create_openai_functions_agent
+from langchain.agents import AgentExecutor
 
-import textwrap
-def consoleformat(input,width=100):
-    formatted=textwrap.fill(input,width)
-    return formatted
+
+
+
+
 
 llm = ChatOpenAI()
 
@@ -42,7 +49,7 @@ output_parser = StrOutputParser()
 chain = prompt | llm | output_parser
 
 # Load reference data to index
-loader = WebBaseLoader("/Users/jacintogomez/Downloads/KOearnings.pdf")
+loader = WebBaseLoader("https://en.wikipedia.org/wiki/Bitcoin")
 docs = loader.load()
 
 # Embedding model
@@ -62,13 +69,8 @@ prompt = ChatPromptTemplate.from_messages([
     ("user", "{input}"),
     ("user", "Given the above conversation, generate a search query to look up in order to get information relevant to the conversation")
 ])
-retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 
-chat_history = [HumanMessage(content="Can LangSmith help test my LLM applications?"), AIMessage(content="Yes!")]
-retriever_chain.invoke({
-    "chat_history": chat_history,
-    "input": "Tell me how"
-})
+retriever_chain = create_history_aware_retriever(llm, retriever, prompt)
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", "Answer the user's questions based on the below context:\n\n{context}"),
@@ -79,17 +81,25 @@ document_chain = create_stuff_documents_chain(llm, prompt)
 
 retrieval_chain = create_retrieval_chain(retriever_chain, document_chain)
 
-# chat_history = [HumanMessage(content="Is Satoshi Nakamoto the inventor of Bitcoin?"), AIMessage(content="Yes!")]
-# answer=retrieval_chain.invoke({
+# chat_history = [HumanMessage(content="Can LangSmith help test my LLM applications?"), AIMessage(content="Yes!")]
+# retrieval_chain.invoke({
 #     "chat_history": chat_history,
-#     "input": "Tell me who he is"
+#     "input": "Tell me how"
 # })
 
-while True:
-    user_msg=input("Q: ")
-    chat_history=[]
-    answer=retrieval_chain.invoke({
-        "chat_history":chat_history,
-        "input":user_msg
-    })
-    print(consoleformat(answer['answer']))
+retriever_tool = create_retriever_tool(
+    retriever,
+    "langsmith_search",
+    "Search for information about LangSmith. For any questions about LangSmith, you must use this tool!",
+)
+
+search = TavilySearchResults()
+tools = [retriever_tool, search]
+
+# Get the prompt to use - you can modify this!
+prompt = hub.pull("hwchase17/openai-functions-agent")
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+agent = create_openai_functions_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+agent_executor.invoke({"input": "what is the weather in SF?"})
