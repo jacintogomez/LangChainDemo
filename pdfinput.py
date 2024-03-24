@@ -34,20 +34,20 @@ chain=prompt|llm|outputparser
 loader=PyPDFLoader('book.pdf')
 pages=loader.load_and_split()
 
-faissindex=FAISS.from_documents(pages,OpenAIEmbeddings())
-docs=faissindex.similarity_search('How will the community be engaged',k=2)
-for page in pages:
-    print('Page '+str(page.metadata['page'])+':',page.page_content[:300])
+# faissindex=FAISS.from_documents(pages,OpenAIEmbeddings())
+# docs=faissindex.similarity_search('How will the community be engaged',k=2)
+# for page in pages:
+#     print('Page '+str(page.metadata['page'])+':',page.page_content[:300])
 
-# embeddings=OpenAIEmbeddings()
-# tsplitter=RecursiveCharacterTextSplitter()
-# documents=tsplitter.split_documents(docs)
-# vec=FAISS.from_documents(documents,embeddings)
+embeddings=OpenAIEmbeddings()
+tsplitter=RecursiveCharacterTextSplitter()
+documents=tsplitter.split_documents(pages)
+vec=FAISS.from_documents(documents,embeddings)
 
-# retriever=vec.as_retriever()
-# retrievalchain=create_retrieval_chain(retriever,documentchain)
-# question='Please summarize the given file in 5 sentences or less'
-# response=retrievalchain.invoke({'input':question})
-# print(question)
-# cleanans=response['answer']
-# print(consoleformat(cleanans))
+retriever=vec.as_retriever()
+retrievalchain=create_retrieval_chain(retriever,documentchain)
+question='Who are the residents for which this contract was written?'
+response=retrievalchain.invoke({'input':question})
+print(question)
+cleanans=response['answer']
+print(consoleformat(cleanans))
